@@ -17,7 +17,7 @@ export default function ChartTypeSelector() {
 
   return (
     <>
-      {/* Desktop: inline pill buttons */}
+      {/* Desktop */}
       <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto scrollbar-thin">
         {CHART_OPTIONS.map((opt) => {
           const active = selectedChartType === opt.type;
@@ -26,11 +26,11 @@ export default function ChartTypeSelector() {
               key={opt.type}
               onClick={() => setChartType(opt.type)}
               className={`
-                shrink-0 px-3 py-2 rounded-xl text-xs font-semibold transition-smooth whitespace-nowrap
+                shrink-0 px-3 py-2 rounded-full text-xs font-semibold transition-all duration-200 whitespace-nowrap border
                 ${
                   active
-                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/40 shadow-lg shadow-blue-500/10'
-                    : 'bg-[#111827] text-[#64748b] hover:bg-[#1a2332] hover:text-[#94a3b8] border border-[#1e293b]'
+                    ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 shadow-md shadow-purple-500/10'
+                    : 'bg-transparent text-[#64748b] hover:text-[#94a3b8] border-[#1e293b] hover:border-[#2a3548]'
                 }
               `}
             >
@@ -41,8 +41,8 @@ export default function ChartTypeSelector() {
         })}
       </div>
 
-      {/* Mobile: horizontal scroll pills */}
-      <div className="sm:hidden flex items-center gap-2 overflow-x-auto scrollbar-thin pb-1 -mx-1 px-1">
+      {/* Mobile */}
+      <div className="sm:hidden flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1">
         {CHART_OPTIONS.map((opt) => {
           const active = selectedChartType === opt.type;
           return (
@@ -50,11 +50,11 @@ export default function ChartTypeSelector() {
               key={opt.type}
               onClick={() => setChartType(opt.type)}
               className={`
-                shrink-0 px-3 py-2.5 rounded-xl text-[11px] font-semibold transition-smooth whitespace-nowrap touch-active
+                shrink-0 px-3.5 py-2 rounded-full text-[11px] font-bold transition-all duration-200 whitespace-nowrap border
                 ${
                   active
-                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/40 shadow-lg shadow-blue-500/10'
-                    : 'bg-[#111827] text-[#64748b] border border-[#1e293b]'
+                    ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 shadow-md shadow-purple-500/10'
+                    : 'bg-transparent text-[#64748b] border-[#1e293b] active:scale-95'
                 }
               `}
             >

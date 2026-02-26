@@ -88,10 +88,15 @@ export default function AddEntryForm({ isOpen = true, onClose }: Props) {
           <div>
             <label className="block text-[10px] text-[#64748b] mb-1.5 uppercase tracking-wider font-semibold">P&L (₹)</label>
             <input
-              type="number"
-              step="any"
+              type="text"
+              inputMode="decimal"
               value={pnl}
-              onChange={(e) => setPnl(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === '' || val === '-' || /^-?\d*\.?\d*$/.test(val)) {
+                  setPnl(val);
+                }
+              }}
               placeholder="e.g. 1250 or -340"
               className="w-full bg-[#060a13] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-[#f1f5f9] placeholder-[#4a5568] focus:border-blue-500 transition-smooth font-[JetBrains_Mono]"
             />

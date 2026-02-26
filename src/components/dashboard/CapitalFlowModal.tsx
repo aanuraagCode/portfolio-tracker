@@ -54,7 +54,7 @@ export default function CapitalFlowModal({ isOpen, onClose }: Props) {
           <div className="w-10 h-1 bg-[#2a3548] rounded-full" />
         </div>
 
-        <div className="p-5">
+        <div className="p-5 pb-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
@@ -191,10 +191,10 @@ export default function CapitalFlowModal({ isOpen, onClose }: Props) {
 
               <button
                 type="submit"
-                className={`w-full py-3.5 text-white text-sm font-bold rounded-xl transition-smooth shadow-lg touch-active ${
+                className={`w-full py-4 text-white text-sm font-bold rounded-xl transition-smooth shadow-xl touch-active ${
                   flowType === 'deposit'
-                    ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 shadow-emerald-600/20'
-                    : 'bg-gradient-to-r from-red-600 to-red-500 shadow-red-600/20'
+                    ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 shadow-emerald-600/25 active:from-emerald-500 active:to-emerald-400'
+                    : 'bg-gradient-to-r from-red-600 to-red-500 shadow-red-600/25 active:from-red-500 active:to-red-400'
                 }`}
               >
                 {flowType === 'deposit' ? '↗ Add Capital' : '↙ Withdraw Capital'}

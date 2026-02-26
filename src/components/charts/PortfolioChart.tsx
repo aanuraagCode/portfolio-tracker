@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import {
   ResponsiveContainer,
   LineChart,
@@ -12,6 +12,7 @@ import {
   Tooltip,
   CartesianGrid,
   ReferenceLine,
+  Brush,
 } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { usePortfolioStore } from '../../store/portfolioStore';
@@ -24,7 +25,6 @@ import {
 } from '../../utils/calculations';
 import type { ChartType, MonthlyReturn } from '../../types';
 
-/* ── Custom Tooltip ── */
 interface TooltipPayloadItem {
   value: number;
   dataKey: string;
@@ -46,53 +46,63 @@ function CustomTooltip({
   const data = payload[0].payload;
 
   return (
-    <div className="bg-[#111827] border border-[#1e293b] rounded-lg p-3 shadow-2xl text-xs backdrop-blur-sm">
-      <p className="text-[#64748b] font-medium mb-1.5">
+    <div className="bg-[#111827]/95 border border-[#2a3548] rounded-xl p-3.5 shadow-2xl text-xs backdrop-blur-md"
+      style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(59,130,246,0.1)' }}
+    >
+      <p className="text-blue-400 font-semibold mb-2 text-[11px] flex items-center gap-1.5">
+        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
         {chartType === 'distribution'
           ? `Range: ${label}`
-          : (() => { try { return format(parseISO(label), 'MMM d, yyyy'); } catch { return label; } })()
+          : (() => { try { return format(parseISO(label), 'EEE, MMM d, yyyy'); } catch { return label; } })()
         }
       </p>
-      {chartType === 'drawdown' ? (
-        <p className="text-red-400 font-bold">
-          Drawdown: {formatPercent((data.drawdown as number) / 100)}
-        </p>
-      ) : chartType === 'cumulative' ? (
-        <p className="text-purple-400 font-bold">
-          Return: {formatPercent((data.cumulativeReturnPct as number) / 100)}
-        </p>
-      ) : chartType === 'bar' ? (
-        <p className={`font-bold ${(data.pnl as number) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-          P&L: {formatCurrencyFull(data.pnl as number)}
-        </p>
-      ) : chartType === 'distribution' ? (
-        <p className="text-blue-400 font-bold">
-          Count: {data.count as number} days
-        </p>
-      ) : chartType === 'rolling' ? (
-        <p className="text-cyan-400 font-bold">
-          Sharpe: {(data.sharpe as number).toFixed(2)}
-        </p>
-      ) : (
-        <>
-          <p className="text-white font-bold">
-            Equity: {formatCurrencyFull(data.equity as number)}
-          </p>
-          <p className={`${(data.pnl as number) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-            P&L: {formatCurrencyFull(data.pnl as number)}
-          </p>
-          <p className="text-[#64748b] mt-1">
-            Invested: {formatCurrencyFull(data.investedCapital as number)}
-          </p>
-        </>
-      )}
+      <div className="space-y-1.5">
+        {chartType === 'drawdown' ? (
+          <TooltipRow label="Drawdown" value={formatPercent((data.drawdown as number) / 100)} color="text-red-400" />
+        ) : chartType === 'cumulative' ? (
+          <TooltipRow label="Return" value={formatPercent((data.cumulativeReturnPct as number) / 100)} color="text-purple-400" />
+        ) : chartType === 'bar' ? (
+          <TooltipRow
+            label="P&L"
+            value={formatCurrencyFull(data.pnl as number)}
+            color={(data.pnl as number) >= 0 ? 'text-emerald-400' : 'text-red-400'}
+          />
+        ) : chartType === 'distribution' ? (
+          <TooltipRow label="Count" value={`${data.count} days`} color="text-blue-400" />
+        ) : chartType === 'rolling' ? (
+          <TooltipRow label="Sharpe" value={(data.sharpe as number).toFixed(2)} color="text-cyan-400" />
+        ) : (
+          <>
+            <TooltipRow label="Equity" value={formatCurrencyFull(data.equity as number)} color="text-white" />
+            <TooltipRow
+              label="P&L"
+              value={formatCurrencyFull(data.pnl as number)}
+              color={(data.pnl as number) >= 0 ? 'text-emerald-400' : 'text-red-400'}
+            />
+            <div className="border-t border-[#1e293b]/50 pt-1.5 mt-1.5">
+              <TooltipRow label="Invested" value={formatCurrencyFull(data.investedCapital as number)} color="text-[#64748b]" />
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
 
-/* ── Monthly Heatmap ── */
+function TooltipRow({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span className="text-[#94a3b8] text-[10px]">{label}</span>
+      <span className={`${color} font-bold font-[JetBrains_Mono] text-[11px]`}>{value}</span>
+    </div>
+  );
+}
+
 function MonthlyHeatmap({ monthlyReturns }: { monthlyReturns: MonthlyReturn[] }) {
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const [hoveredCell, setHoveredCell] = useState<string | null>(null);
 
   const years = useMemo(() => {
     const yearSet = new Set(monthlyReturns.map((m) => m.year));
@@ -152,6 +162,8 @@ function MonthlyHeatmap({ monthlyReturns }: { monthlyReturns: MonthlyReturn[] })
                 <td className="text-xs font-semibold text-[#f1f5f9] p-2 font-[JetBrains_Mono]">{year}</td>
                 {Array.from({ length: 12 }, (_, i) => {
                   const data = dataMap.get(`${year}-${i}`);
+                  const cellKey = `${year}-${i}`;
+                  const isHovered = hoveredCell === cellKey;
                   if (!data) {
                     return (
                       <td key={i} className="p-1">
@@ -164,8 +176,12 @@ function MonthlyHeatmap({ monthlyReturns }: { monthlyReturns: MonthlyReturn[] })
                   return (
                     <td key={i} className="p-1">
                       <div
-                        className={`heatmap-cell w-full h-10 rounded flex flex-col items-center justify-center ${getColor(data.returnPct)}`}
+                        className={`heatmap-cell w-full h-10 rounded flex flex-col items-center justify-center cursor-pointer transition-all duration-150 ${getColor(data.returnPct)} ${isHovered ? 'ring-2 ring-white/30 scale-110 z-20' : ''}`}
                         title={`${data.monthLabel} ${year}: ${formatCurrency(data.pnl)} (${(data.returnPct * 100).toFixed(1)}%)`}
+                        onMouseEnter={() => setHoveredCell(cellKey)}
+                        onMouseLeave={() => setHoveredCell(null)}
+                        onTouchStart={() => setHoveredCell(cellKey)}
+                        onTouchEnd={() => setHoveredCell(null)}
                       >
                         <span className="text-[10px] font-bold font-[JetBrains_Mono] leading-tight">
                           {(data.returnPct * 100).toFixed(1)}%
@@ -193,12 +209,25 @@ function MonthlyHeatmap({ monthlyReturns }: { monthlyReturns: MonthlyReturn[] })
   );
 }
 
-/* ── Main Chart Component ── */
+function ActiveDot(props: Record<string, unknown>) {
+  const { cx, cy, fill } = props as { cx: number; cy: number; fill: string };
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={8} fill={fill} fillOpacity={0.15} />
+      <circle cx={cx} cy={cy} r={5} fill={fill} stroke="#fff" strokeWidth={2} />
+    </g>
+  );
+}
+
 export default function PortfolioChart() {
   const { filteredEquityCurve, selectedChartType } = usePortfolioStore();
   const monthlyReturns = usePortfolioStore((s) => s.monthlyReturns);
+  const [brushRange, setBrushRange] = useState<{ startIndex?: number; endIndex?: number }>({});
 
-  // Standard chart data
+  const handleBrushChange = useCallback((range: { startIndex?: number; endIndex?: number }) => {
+    setBrushRange(range);
+  }, []);
+
   const chartData = useMemo(
     () =>
       filteredEquityCurve.map((p) => ({
@@ -210,24 +239,20 @@ export default function PortfolioChart() {
     [filteredEquityCurve],
   );
 
-  // Rolling Sharpe data
   const rollingSharpeData = useMemo(
     () => computeRollingSharpe(filteredEquityCurve, 20),
     [filteredEquityCurve],
   );
 
-  // P&L distribution data
   const distributionData = useMemo(
     () => computePnLDistribution(filteredEquityCurve, 25),
     [filteredEquityCurve],
   );
 
-  // Monthly heatmap
   if (selectedChartType === 'monthly') {
     return <MonthlyHeatmap monthlyReturns={monthlyReturns} />;
   }
 
-  // Distribution histogram
   if (selectedChartType === 'distribution') {
     if (distributionData.length === 0) {
       return (
@@ -257,19 +282,21 @@ export default function PortfolioChart() {
             />
             <Tooltip
               content={<CustomTooltip chartType="distribution" />}
+              cursor={{ fill: 'rgba(59, 130, 246, 0.06)' }}
             />
             <ReferenceLine x={distributionData.findIndex((b) => b.midpoint >= 0)} stroke="#2a3548" />
             <Bar
               dataKey="count"
-              animationDuration={800}
-              radius={[3, 3, 0, 0]}
+              animationDuration={1200}
+              animationEasing="ease-out"
+              radius={[4, 4, 0, 0]}
               shape={(props) => {
                 const { x, y, width, height, payload } = props as unknown as {
                   x: number; y: number; width: number; height: number;
                   payload: { midpoint: number };
                 };
                 const fill = payload.midpoint >= 0 ? '#22c55e' : '#ef4444';
-                return <rect x={x} y={y} width={width} height={Math.abs(height)} fill={fill} rx={3} fillOpacity={0.8} />;
+                return <rect x={x} y={y} width={width} height={Math.abs(height)} fill={fill} rx={4} fillOpacity={0.85} />;
               }}
             />
           </BarChart>
@@ -278,7 +305,6 @@ export default function PortfolioChart() {
     );
   }
 
-  // Rolling Sharpe
   if (selectedChartType === 'rolling') {
     if (rollingSharpeData.length === 0) {
       return (
@@ -316,7 +342,10 @@ export default function PortfolioChart() {
               width={50}
               tickFormatter={(v: number) => v.toFixed(1)}
             />
-            <Tooltip content={<CustomTooltip chartType="rolling" />} />
+            <Tooltip
+              content={<CustomTooltip chartType="rolling" />}
+              cursor={{ stroke: '#3b82f6', strokeWidth: 1, strokeDasharray: '4 4' }}
+            />
             <ReferenceLine y={0} stroke="#2a3548" />
             <ReferenceLine y={1} stroke="#22c55e33" strokeDasharray="5 5" label={{ value: 'Good', fill: '#22c55e', fontSize: 10 }} />
             <ReferenceLine y={2} stroke="#22c55e55" strokeDasharray="5 5" label={{ value: 'Great', fill: '#22c55e', fontSize: 10 }} />
@@ -326,7 +355,8 @@ export default function PortfolioChart() {
               stroke="#06b6d4"
               strokeWidth={2}
               fill="url(#sharpeGradient)"
-              animationDuration={800}
+              animationDuration={1200}
+              activeDot={<ActiveDot fill="#06b6d4" />}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -334,7 +364,6 @@ export default function PortfolioChart() {
     );
   }
 
-  // Standard charts (line, area, bar, cumulative, drawdown)
   if (chartData.length === 0) {
     return (
       <div className="h-[300px] sm:h-[400px] lg:h-[480px] flex items-center justify-center text-[#64748b] text-sm">
@@ -343,9 +372,11 @@ export default function PortfolioChart() {
     );
   }
 
+  const showBrush = chartData.length > 30;
+
   const commonProps = {
     data: chartData,
-    margin: { top: 10, right: 10, left: 0, bottom: 0 },
+    margin: { top: 10, right: 10, left: 0, bottom: showBrush ? 30 : 0 },
   };
 
   const xAxisProps = {
@@ -372,6 +403,21 @@ export default function PortfolioChart() {
     vertical: false,
   };
 
+  const cursorStyle = { stroke: '#3b82f6', strokeWidth: 1, strokeDasharray: '4 4' };
+
+  const brushProps = showBrush ? {
+    dataKey: 'date',
+    height: 20,
+    stroke: '#1e293b',
+    fill: '#0a0e17',
+    tickFormatter: (val: string) => {
+      try { return format(parseISO(val), 'MMM d'); } catch { return val; }
+    },
+    startIndex: brushRange.startIndex,
+    endIndex: brushRange.endIndex,
+    onChange: handleBrushChange,
+  } : null;
+
   const renderChart = () => {
     switch (selectedChartType) {
       case 'area':
@@ -379,22 +425,26 @@ export default function PortfolioChart() {
           <AreaChart {...commonProps}>
             <defs>
               <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
+                <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.35} />
+                <stop offset="50%" stopColor="#3b82f6" stopOpacity={0.1} />
                 <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid {...gridProps} />
             <XAxis {...xAxisProps} />
             <YAxis {...yAxisProps} tickFormatter={(v: number) => formatCurrency(v)} />
-            <Tooltip content={<CustomTooltip chartType={selectedChartType} />} />
+            <Tooltip content={<CustomTooltip chartType={selectedChartType} />} cursor={cursorStyle} />
             <Area
               type="monotone"
               dataKey="equity"
               stroke="#3b82f6"
-              strokeWidth={2}
+              strokeWidth={2.5}
               fill="url(#equityGradient)"
-              animationDuration={800}
+              animationDuration={1200}
+              animationEasing="ease-out"
+              activeDot={<ActiveDot fill="#3b82f6" />}
             />
+            {brushProps && <Brush {...brushProps} />}
           </AreaChart>
         );
 
@@ -404,12 +454,13 @@ export default function PortfolioChart() {
             <CartesianGrid {...gridProps} />
             <XAxis {...xAxisProps} />
             <YAxis {...yAxisProps} tickFormatter={(v: number) => formatCurrency(v)} />
-            <Tooltip content={<CustomTooltip chartType={selectedChartType} />} />
+            <Tooltip content={<CustomTooltip chartType={selectedChartType} />} cursor={{ fill: 'rgba(59, 130, 246, 0.06)' }} />
             <ReferenceLine y={0} stroke="#2a3548" />
             <Bar
               dataKey="pnl"
-              animationDuration={800}
-              radius={[2, 2, 0, 0]}
+              animationDuration={1200}
+              animationEasing="ease-out"
+              radius={[3, 3, 0, 0]}
               fill="#3b82f6"
               shape={(props) => {
                 const { x, y, width, height, payload } = props as unknown as {
@@ -417,9 +468,10 @@ export default function PortfolioChart() {
                   payload: { pnl: number };
                 };
                 const fill = payload.pnl >= 0 ? '#22c55e' : '#ef4444';
-                return <rect x={x} y={y} width={width} height={Math.abs(height)} fill={fill} rx={2} fillOpacity={0.85} />;
+                return <rect x={x} y={y} width={width} height={Math.abs(height)} fill={fill} rx={3} fillOpacity={0.85} />;
               }}
             />
+            {brushProps && <Brush {...brushProps} />}
           </BarChart>
         );
 
@@ -428,23 +480,26 @@ export default function PortfolioChart() {
           <AreaChart {...commonProps}>
             <defs>
               <linearGradient id="cumGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#a855f7" stopOpacity={0.3} />
+                <stop offset="0%" stopColor="#a855f7" stopOpacity={0.35} />
+                <stop offset="50%" stopColor="#a855f7" stopOpacity={0.1} />
                 <stop offset="100%" stopColor="#a855f7" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid {...gridProps} />
             <XAxis {...xAxisProps} />
             <YAxis {...yAxisProps} tickFormatter={(v: number) => `${v.toFixed(1)}%`} />
-            <Tooltip content={<CustomTooltip chartType={selectedChartType} />} />
+            <Tooltip content={<CustomTooltip chartType={selectedChartType} />} cursor={cursorStyle} />
             <ReferenceLine y={0} stroke="#2a3548" />
             <Area
               type="monotone"
               dataKey="cumulativeReturnPct"
               stroke="#a855f7"
-              strokeWidth={2}
+              strokeWidth={2.5}
               fill="url(#cumGradient)"
-              animationDuration={800}
+              animationDuration={1200}
+              activeDot={<ActiveDot fill="#a855f7" />}
             />
+            {brushProps && <Brush {...brushProps} />}
           </AreaChart>
         );
 
@@ -454,42 +509,45 @@ export default function PortfolioChart() {
             <defs>
               <linearGradient id="ddGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#ef4444" stopOpacity={0} />
-                <stop offset="100%" stopColor="#ef4444" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="#ef4444" stopOpacity={0.35} />
               </linearGradient>
             </defs>
             <CartesianGrid {...gridProps} />
             <XAxis {...xAxisProps} />
             <YAxis {...yAxisProps} tickFormatter={(v: number) => `${v.toFixed(1)}%`} />
-            <Tooltip content={<CustomTooltip chartType={selectedChartType} />} />
+            <Tooltip content={<CustomTooltip chartType={selectedChartType} />} cursor={cursorStyle} />
             <ReferenceLine y={0} stroke="#2a3548" />
             <Area
               type="monotone"
               dataKey="drawdownPct"
               stroke="#ef4444"
-              strokeWidth={2}
+              strokeWidth={2.5}
               fill="url(#ddGradient)"
-              animationDuration={800}
+              animationDuration={1200}
+              activeDot={<ActiveDot fill="#ef4444" />}
             />
+            {brushProps && <Brush {...brushProps} />}
           </AreaChart>
         );
 
-      // Default: line chart
       default:
         return (
           <LineChart {...commonProps}>
             <CartesianGrid {...gridProps} />
             <XAxis {...xAxisProps} />
             <YAxis {...yAxisProps} tickFormatter={(v: number) => formatCurrency(v)} />
-            <Tooltip content={<CustomTooltip chartType={selectedChartType} />} />
+            <Tooltip content={<CustomTooltip chartType={selectedChartType} />} cursor={cursorStyle} />
             <Line
               type="monotone"
               dataKey="equity"
               stroke="#3b82f6"
               strokeWidth={2.5}
               dot={false}
-              activeDot={{ r: 4, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}
-              animationDuration={800}
+              activeDot={<ActiveDot fill="#3b82f6" />}
+              animationDuration={1200}
+              animationEasing="ease-out"
             />
+            {brushProps && <Brush {...brushProps} />}
           </LineChart>
         );
     }
