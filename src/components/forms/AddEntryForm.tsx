@@ -3,7 +3,6 @@ import { format } from 'date-fns';
 import { usePortfolioStore } from '../../store/portfolioStore';
 
 interface Props {
-  /** Mobile: controlled collapse state */
   isOpen?: boolean;
   onClose?: () => void;
 }
@@ -23,7 +22,6 @@ export default function AddEntryForm({ isOpen = true, onClose }: Props) {
       setError('');
       setSuccess(false);
 
-      // Validation
       if (!date) {
         setError('Please select a date.');
         return;
@@ -36,7 +34,6 @@ export default function AddEntryForm({ isOpen = true, onClose }: Props) {
 
       addEntry(date, pnlNum, note.trim());
 
-      // Reset form
       setPnl('');
       setNote('');
       setSuccess(true);
@@ -53,17 +50,22 @@ export default function AddEntryForm({ isOpen = true, onClose }: Props) {
     <div className="animate-fade-in">
       <form
         onSubmit={handleSubmit}
-        className="bg-[#1a2235] border border-[#2a3548] rounded-xl p-4 sm:p-5"
+        className="card-glass rounded-2xl p-4 sm:p-5"
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-[#e2e8f0] uppercase tracking-wider">
-            Add Daily Entry
+          <h3 className="text-xs font-semibold text-[#94a3b8] uppercase tracking-wider flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <svg className="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+            </div>
+            Add Daily P&L
           </h3>
           {onClose && (
             <button
               type="button"
               onClick={onClose}
-              className="text-[#64748b] hover:text-[#e2e8f0] transition-smooth lg:hidden"
+              className="text-[#64748b] hover:text-[#f1f5f9] transition-smooth lg:hidden p-2 rounded-xl hover:bg-[#1e293b]"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -73,61 +75,59 @@ export default function AddEntryForm({ isOpen = true, onClose }: Props) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          {/* Date */}
           <div>
-            <label className="block text-xs text-[#64748b] mb-1.5">Date</label>
+            <label className="block text-[10px] text-[#64748b] mb-1.5 uppercase tracking-wider font-semibold">Date</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-[#0a0e17] border border-[#2a3548] rounded-lg px-3 py-2.5 text-sm text-[#e2e8f0] focus:border-blue-500 transition-smooth"
+              className="w-full bg-[#060a13] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-[#f1f5f9] focus:border-blue-500 transition-smooth"
             />
           </div>
 
-          {/* P&L */}
           <div>
-            <label className="block text-xs text-[#64748b] mb-1.5">P&L ($)</label>
+            <label className="block text-[10px] text-[#64748b] mb-1.5 uppercase tracking-wider font-semibold">P&L (₹)</label>
             <input
               type="number"
               step="any"
               value={pnl}
               onChange={(e) => setPnl(e.target.value)}
               placeholder="e.g. 1250 or -340"
-              className="w-full bg-[#0a0e17] border border-[#2a3548] rounded-lg px-3 py-2.5 text-sm text-[#e2e8f0] placeholder-[#4a5568] focus:border-blue-500 transition-smooth"
+              className="w-full bg-[#060a13] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-[#f1f5f9] placeholder-[#4a5568] focus:border-blue-500 transition-smooth font-[JetBrains_Mono]"
             />
           </div>
 
-          {/* Note */}
           <div>
-            <label className="block text-xs text-[#64748b] mb-1.5">
-              Note <span className="text-[#4a5568]">(optional)</span>
+            <label className="block text-[10px] text-[#64748b] mb-1.5 uppercase tracking-wider font-semibold">
+              Note <span className="text-[#2a3548]">(optional)</span>
             </label>
             <input
               type="text"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Market context, strategy..."
-              className="w-full bg-[#0a0e17] border border-[#2a3548] rounded-lg px-3 py-2.5 text-sm text-[#e2e8f0] placeholder-[#4a5568] focus:border-blue-500 transition-smooth"
+              className="w-full bg-[#060a13] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-[#f1f5f9] placeholder-[#4a5568] focus:border-blue-500 transition-smooth"
             />
           </div>
         </div>
 
-        {/* Error */}
         {error && (
-          <p className="text-red-400 text-xs mt-3">{error}</p>
+          <p className="text-red-400 text-xs mt-3 animate-fade-in">{error}</p>
         )}
 
-        {/* Submit */}
         <div className="flex items-center gap-3 mt-4">
           <button
             type="submit"
-            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-smooth shadow-md shadow-blue-600/20"
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-bold rounded-xl transition-smooth shadow-lg shadow-blue-600/20 touch-active"
           >
             Add Entry
           </button>
           {success && (
-            <span className="text-emerald-400 text-xs animate-fade-in">
-              ✓ Entry added
+            <span className="text-emerald-400 text-xs animate-pop-in flex items-center gap-1.5 font-semibold">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Entry added
             </span>
           )}
         </div>
@@ -135,4 +135,3 @@ export default function AddEntryForm({ isOpen = true, onClose }: Props) {
     </div>
   );
 }
-
