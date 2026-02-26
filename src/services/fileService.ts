@@ -1,8 +1,6 @@
 /**
  * File I/O service — load & save portfolio JSON via browser APIs.
- *
- * Load:  FileReader API  (user uploads a file)
- * Save:  Blob + URL.createObjectURL  (triggers download)
+ * Handles backward compatibility with older portfolio files.
  */
 
 import type { PortfolioData, PortfolioEntry } from '../types';
@@ -11,7 +9,6 @@ import type { PortfolioData, PortfolioEntry } from '../types';
 // Validation
 // ────────────────────────────────────────────
 
-/** Type-guard: is value a valid PortfolioEntry? */
 function isValidEntry(entry: unknown): entry is PortfolioEntry {
   if (typeof entry !== 'object' || entry === null) return false;
   const e = entry as Record<string, unknown>;
@@ -25,7 +22,6 @@ function isValidEntry(entry: unknown): entry is PortfolioEntry {
   );
 }
 
-/** Validate the full portfolio JSON structure. Returns error string or null. */
 export function validatePortfolioData(data: unknown): string | null {
   if (typeof data !== 'object' || data === null) {
     return 'Invalid JSON: root must be an object.';
@@ -43,21 +39,17 @@ export function validatePortfolioData(data: unknown): string | null {
 
   for (let i = 0; i < d.entries.length; i++) {
     if (!isValidEntry(d.entries[i])) {
-      return `Invalid entry at index ${i}. Each entry must have id (string), date (ISO string), pnl (number), note (string).`;
+      return `Invalid entry at index ${i}. Each entry must have id, date, pnl, note.`;
     }
   }
 
-  return null; // valid
+  return null;
 }
 
 // ────────────────────────────────────────────
-// Load (Upload)
+// Load (Upload) — with backward compatibility
 // ────────────────────────────────────────────
 
-/**
- * Read a JSON file selected by the user and return parsed PortfolioData.
- * Throws if the file is unreadable or fails validation.
- */
 export function loadPortfolioFile(file: File): Promise<PortfolioData> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -71,8 +63,18 @@ export function loadPortfolioFile(file: File): Promise<PortfolioData> {
           reject(new Error(error));
           return;
         }
-        resolve(parsed as PortfolioData);
-      } catch (err) {
+
+        // Ensure new fields have defaults for backward compat
+        const data: PortfolioData = {
+          initialCapital: parsed.initialCapital,
+          entries: parsed.entries,
+          capitalFlows: Array.isArray(parsed.capitalFlows) ? parsed.capitalFlows : [],
+          targetReturn: typeof parsed.targetReturn === 'number' ? parsed.targetReturn : null,
+          benchmarks: Array.isArray(parsed.benchmarks) ? parsed.benchmarks : [],
+        };
+
+        resolve(data);
+      } catch {
         reject(new Error('Failed to parse JSON file. Please check the format.'));
       }
     };
@@ -89,9 +91,6 @@ export function loadPortfolioFile(file: File): Promise<PortfolioData> {
 // Save (Download)
 // ────────────────────────────────────────────
 
-/**
- * Trigger a browser download of the portfolio as a JSON file.
- */
 export function savePortfolioFile(data: PortfolioData, filename?: string): void {
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
@@ -103,7 +102,6 @@ export function savePortfolioFile(data: PortfolioData, filename?: string): void 
   document.body.appendChild(a);
   a.click();
 
-  // Cleanup
   setTimeout(() => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
@@ -111,13 +109,9 @@ export function savePortfolioFile(data: PortfolioData, filename?: string): void 
 }
 
 // ────────────────────────────────────────────
-// Trigger file picker
+// File picker
 // ────────────────────────────────────────────
 
-/**
- * Programmatically open a file picker for JSON files.
- * Returns the selected File, or null if the user cancelled.
- */
 export function openFilePicker(accept = '.json'): Promise<File | null> {
   return new Promise((resolve) => {
     const input = document.createElement('input');
@@ -129,8 +123,6 @@ export function openFilePicker(accept = '.json'): Promise<File | null> {
       resolve(file);
     };
 
-    // If user cancels, the change event never fires on some browsers.
-    // Use a focus fallback to detect cancel.
     const onFocus = () => {
       setTimeout(() => {
         if (!input.files || input.files.length === 0) {
@@ -144,4 +136,3 @@ export function openFilePicker(accept = '.json'): Promise<File | null> {
     input.click();
   });
 }
-

@@ -2,11 +2,14 @@ import { usePortfolioStore } from '../../store/portfolioStore';
 import type { ChartType } from '../../types';
 
 const CHART_OPTIONS: { type: ChartType; label: string; icon: string }[] = [
-  { type: 'line', label: 'Line', icon: '📈' },
-  { type: 'area', label: 'Area', icon: '📊' },
-  { type: 'bar', label: 'Bar', icon: '📶' },
-  { type: 'cumulative', label: 'Cumulative Returns', icon: '📉' },
+  { type: 'area', label: 'Equity', icon: '📈' },
+  { type: 'line', label: 'Line', icon: '📊' },
+  { type: 'bar', label: 'Daily P&L', icon: '📶' },
+  { type: 'cumulative', label: 'Returns', icon: '📉' },
   { type: 'drawdown', label: 'Drawdown', icon: '⬇️' },
+  { type: 'monthly', label: 'Monthly', icon: '📅' },
+  { type: 'distribution', label: 'Distribution', icon: '🔔' },
+  { type: 'rolling', label: 'Sharpe', icon: '⚡' },
 ];
 
 export default function ChartTypeSelector() {
@@ -14,8 +17,8 @@ export default function ChartTypeSelector() {
 
   return (
     <>
-      {/* Desktop: inline buttons */}
-      <div className="hidden sm:flex items-center gap-1.5">
+      {/* Desktop: inline pill buttons */}
+      <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto scrollbar-thin">
         {CHART_OPTIONS.map((opt) => {
           const active = selectedChartType === opt.type;
           return (
@@ -23,36 +26,43 @@ export default function ChartTypeSelector() {
               key={opt.type}
               onClick={() => setChartType(opt.type)}
               className={`
-                px-3 py-1.5 rounded-lg text-sm font-medium transition-smooth
+                shrink-0 px-3 py-2 rounded-xl text-xs font-semibold transition-smooth whitespace-nowrap
                 ${
                   active
-                    ? 'bg-[#1f2b42] text-white border border-blue-500/40'
-                    : 'bg-[#1a2235] text-[#94a3b8] hover:bg-[#1f2b42] hover:text-[#e2e8f0] border border-[#2a3548]'
+                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/40 shadow-lg shadow-blue-500/10'
+                    : 'bg-[#111827] text-[#64748b] hover:bg-[#1a2332] hover:text-[#94a3b8] border border-[#1e293b]'
                 }
               `}
             >
-              <span className="mr-1.5">{opt.icon}</span>
+              <span className="mr-1">{opt.icon}</span>
               {opt.label}
             </button>
           );
         })}
       </div>
 
-      {/* Mobile: dropdown */}
-      <div className="sm:hidden">
-        <select
-          value={selectedChartType}
-          onChange={(e) => setChartType(e.target.value as ChartType)}
-          className="w-full bg-[#1a2235] border border-[#2a3548] rounded-lg px-3 py-2.5 text-sm text-[#e2e8f0] focus:border-blue-500 transition-smooth"
-        >
-          {CHART_OPTIONS.map((opt) => (
-            <option key={opt.type} value={opt.type}>
+      {/* Mobile: horizontal scroll pills */}
+      <div className="sm:hidden flex items-center gap-2 overflow-x-auto scrollbar-thin pb-1 -mx-1 px-1">
+        {CHART_OPTIONS.map((opt) => {
+          const active = selectedChartType === opt.type;
+          return (
+            <button
+              key={opt.type}
+              onClick={() => setChartType(opt.type)}
+              className={`
+                shrink-0 px-3 py-2.5 rounded-xl text-[11px] font-semibold transition-smooth whitespace-nowrap touch-active
+                ${
+                  active
+                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/40 shadow-lg shadow-blue-500/10'
+                    : 'bg-[#111827] text-[#64748b] border border-[#1e293b]'
+                }
+              `}
+            >
               {opt.icon} {opt.label}
-            </option>
-          ))}
-        </select>
+            </button>
+          );
+        })}
       </div>
     </>
   );
 }
-

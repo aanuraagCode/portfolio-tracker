@@ -1,46 +1,99 @@
 import { usePortfolioStore } from '../../store/portfolioStore';
+import type { MobileTab } from '../../types';
 
-interface Props {
-  onToggleAddEntry: () => void;
-}
+const tabs: { id: MobileTab; label: string; icon: (active: boolean) => React.ReactNode }[] = [
+  {
+    id: 'dashboard',
+    label: 'Home',
+    icon: (active) => (
+      <svg className="w-5 h-5" fill={active ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.8}>
+        {active ? (
+          <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        ) : (
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        )}
+      </svg>
+    ),
+  },
+  {
+    id: 'charts',
+    label: 'Charts',
+    icon: (active) => (
+      <svg className="w-5 h-5" fill={active ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.8}>
+        {active ? (
+          <path d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+        ) : (
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+        )}
+      </svg>
+    ),
+  },
+  {
+    id: 'log',
+    label: 'Log',
+    icon: (active) => (
+      <svg className="w-5 h-5" fill={active ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.8}>
+        {active ? (
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        ) : (
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        )}
+      </svg>
+    ),
+  },
+  {
+    id: 'compare',
+    label: 'Compare',
+    icon: (active) => (
+      <svg className="w-5 h-5" fill={active ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.8}>
+        {active ? (
+          <path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+        ) : (
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+        )}
+      </svg>
+    ),
+  },
+  {
+    id: 'more',
+    label: 'More',
+    icon: (active) => (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 2.5 : 1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
+  },
+];
 
-export default function MobileActionBar({ onToggleAddEntry }: Props) {
-  const { savePortfolio, loadPortfolio, hasPortfolio } = usePortfolioStore();
+export default function MobileActionBar() {
+  const { activeMobileTab, setMobileTab } = usePortfolioStore();
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#111827]/95 backdrop-blur-sm border-t border-[#2a3548] px-4 py-3 flex items-center justify-around gap-2">
-      {hasPortfolio && (
-        <button
-          onClick={onToggleAddEntry}
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition-smooth"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          Add
-        </button>
-      )}
-      {hasPortfolio && (
-        <button
-          onClick={savePortfolio}
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#1a2235] hover:bg-[#1f2b42] text-[#e2e8f0] text-sm font-medium border border-[#2a3548] transition-smooth"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          Save
-        </button>
-      )}
-      <button
-        onClick={loadPortfolio}
-        className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#1a2235] hover:bg-[#1f2b42] text-[#e2e8f0] text-sm font-medium border border-[#2a3548] transition-smooth"
-      >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m4-8l-4-4m0 0L13 8m4-4v12" />
-        </svg>
-        Load
-      </button>
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bottom-tab-bar safe-bottom">
+      <div className="flex items-center justify-around px-1 py-1">
+        {tabs.map((tab) => {
+          const isActive = activeMobileTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setMobileTab(tab.id)}
+              className={`flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl transition-smooth touch-active relative ${
+                isActive
+                  ? 'bottom-tab-active text-blue-400'
+                  : 'text-[#4a5568] hover:text-[#94a3b8]'
+              }`}
+            >
+              <div className={`transition-spring ${isActive ? 'scale-110' : 'scale-100'}`}>
+                {tab.icon(isActive)}
+              </div>
+              <span className={`text-[10px] font-semibold ${isActive ? 'text-blue-400' : ''}`}>
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
-
